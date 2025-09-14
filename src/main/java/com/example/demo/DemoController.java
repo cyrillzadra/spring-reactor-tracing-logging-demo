@@ -7,6 +7,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 @RestController
 public class DemoController {
 
+  private final WebClient.Builder webClientBuilder;
+
+  public DemoController(WebClient.Builder webClientBuilder) {
+    this.webClientBuilder = webClientBuilder;
+  }
 
   @GetMapping
   public String get() {
@@ -15,8 +20,8 @@ public class DemoController {
     return "Hello, World!";
   }
 
-  private static WebClient getWebClient() {
-    return WebClient.builder().build();
+  private WebClient getWebClient() {
+    return webClientBuilder.build();
   }
 
 }
