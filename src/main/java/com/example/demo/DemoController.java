@@ -20,7 +20,7 @@ public class DemoController {
 
   @GetMapping
   public String get() {
-    getWebClient().get().uri("https://httpbin.org/get").retrieve().bodyToMono(String.class).contextCapture().block();
+    getWebClient().get().uri("https://httpbin.org/get").retrieve().bodyToMono(String.class).block();
     return "Hello, World!";
   }
 
