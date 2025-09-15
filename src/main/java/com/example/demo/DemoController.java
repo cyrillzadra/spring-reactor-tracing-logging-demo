@@ -25,9 +25,7 @@ public class DemoController {
   }
 
   private WebClient getWebClient() {
-    HttpClient httpClient = HttpClient.create()
-        .wiretap(WebClient.class.getCanonicalName(), LogLevel.TRACE, AdvancedByteBufFormat.TEXTUAL);
-    return webClientBuilder.clientConnector(new ReactorClientHttpConnector(httpClient)).build();
+    return webClientBuilder.build();
   }
 
 }
