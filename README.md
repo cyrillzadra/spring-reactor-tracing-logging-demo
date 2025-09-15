@@ -3,6 +3,13 @@
 Problem: Trace context (traceId/spanId) is lost when execution moves from imperative to reactive stack in Spring Boot
 WebFlux applications
 
+Setup:
+Spring Boot: 3.5.5
+Spring WebFlux: Reactive stack
+Micrometer Tracing
+Logging: Logback with MDC
+Reactor Core: 3.7.9
+
 Log output - once execution moves to reactor threads (reactor-http-epoll-2), the traceId and spanId become empty.
 
 ```
