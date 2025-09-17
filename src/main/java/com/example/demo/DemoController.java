@@ -1,16 +1,28 @@
 package com.example.demo;
 
+import java.util.function.Function;
+
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import io.micrometer.context.ContextSnapshot;
+import io.micrometer.context.ContextSnapshotFactory;
+import io.micrometer.observation.ObservationRegistry;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import reactor.netty.NettyPipeline;
+import reactor.netty.http.client.HttpClient;
 
 @RestController
 public class DemoController {
 
   private final WebClient.Builder webClientBuilder;
 
-  public DemoController(WebClient.Builder webClientBuilder) {
+  public DemoController(WebClient.Builder webClientBuilder, ObservationRegistry observationRegistry) {
     this.webClientBuilder = webClientBuilder;
+    reactor.netty.Metrics.observationRegistry(observationRegistry);
   }
 
   @GetMapping
@@ -20,7 +32,29 @@ public class DemoController {
   }
 
   private WebClient getWebClient() {
-    return webClientBuilder.build();
+    HttpClient httpClient =
+        HttpClient.create()
+            .compress(true)
+            .metrics(true, Function.identity())
+            .doOnChannelInit((obs, ch, addr) ->
+                ch.pipeline().addBefore(NettyPipeline.ReactiveBridge, "test", new ChannelInboundHandlerAdapter() {
+                  @Override
+                  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                    try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder().build().setThreadLocalsFrom(ctx.channel())) {
+                      super.channelActive(ctx);
+                    }
+                  }
+
+                  @Override
+                  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                    try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder().build().setThreadLocalsFrom(ctx.channel())) {
+                      super.channelRead(ctx, msg);
+                    }
+                  }
+                }));
+    return webClientBuilder
+        .clientConnector(new ReactorClientHttpConnector(httpClient))
+        .build();
   }
 
 }
