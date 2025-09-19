@@ -32,29 +32,53 @@ public class DemoController {
   }
 
   private WebClient getWebClient() {
-    HttpClient httpClient =
-        HttpClient.create()
-            .compress(true)
-            .metrics(true, Function.identity())
-            .doOnChannelInit((obs, ch, addr) ->
-                ch.pipeline().addBefore(NettyPipeline.ReactiveBridge, "test", new ChannelInboundHandlerAdapter() {
-                  @Override
-                  public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                    try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder().build().setThreadLocalsFrom(ctx.channel())) {
-                      super.channelActive(ctx);
-                    }
-                  }
+    HttpClient httpClient = HttpClient.create()
+        .wiretap(true)
+        .compress(true)
+        .metrics(true, Function.identity())
+        .doOnChannelInit((obs, ch, addr) -> ch.pipeline()
+            .addFirst("test", new ChannelInboundHandlerAdapter() {
 
-                  @Override
-                  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                    try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder().build().setThreadLocalsFrom(ctx.channel())) {
-                      super.channelRead(ctx, msg);
-                    }
-                  }
-                }));
-    return webClientBuilder
-        .clientConnector(new ReactorClientHttpConnector(httpClient))
-        .build();
+              @Override
+              public void channelActive(ChannelHandlerContext ctx) throws Exception {
+                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                    .build()
+                    .setThreadLocalsFrom(ctx.channel())) {
+                  super.channelActive(ctx);
+                }
+              }
+
+              @Override
+              public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                    .build()
+                    .setThreadLocalsFrom(ctx.channel())) {
+                  super.channelRead(ctx, msg);
+                }
+              }
+
+
+
+              @Override
+              public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                    .build()
+                    .setThreadLocalsFrom(ctx.channel())) {
+                  super.channelReadComplete(ctx);
+                }
+              }
+
+              @Override
+              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                    .build()
+                    .setThreadLocalsFrom(ctx.channel())) {
+                  super.exceptionCaught(ctx, cause);
+                }
+              }
+            }));
+
+    return webClientBuilder.clientConnector(new ReactorClientHttpConnector(httpClient)).build();
   }
 
 }
