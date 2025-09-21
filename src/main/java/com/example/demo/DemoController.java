@@ -12,7 +12,6 @@ import io.micrometer.context.ContextSnapshotFactory;
 import io.micrometer.observation.ObservationRegistry;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import reactor.netty.NettyPipeline;
 import reactor.netty.http.client.HttpClient;
 
 @RestController
@@ -36,47 +35,44 @@ public class DemoController {
         .wiretap(true)
         .compress(true)
         .metrics(true, Function.identity())
-        .doOnChannelInit((obs, ch, addr) -> ch.pipeline()
-            .addFirst("test", new ChannelInboundHandlerAdapter() {
+        .doOnChannelInit((obs, ch, addr) -> ch.pipeline().addFirst("test", new ChannelInboundHandlerAdapter() {
 
-              @Override
-              public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
-                    .build()
-                    .setThreadLocalsFrom(ctx.channel())) {
-                  super.channelActive(ctx);
-                }
-              }
+          @Override
+          public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                .build()
+                .setThreadLocalsFrom(ctx.channel())) {
+              super.channelActive(ctx);
+            }
+          }
 
-              @Override
-              public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
-                    .build()
-                    .setThreadLocalsFrom(ctx.channel())) {
-                  super.channelRead(ctx, msg);
-                }
-              }
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                .build()
+                .setThreadLocalsFrom(ctx.channel())) {
+              super.channelRead(ctx, msg);
+            }
+          }
 
+          @Override
+          public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+            try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                .build()
+                .setThreadLocalsFrom(ctx.channel())) {
+              super.channelReadComplete(ctx);
+            }
+          }
 
-
-              @Override
-              public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
-                    .build()
-                    .setThreadLocalsFrom(ctx.channel())) {
-                  super.channelReadComplete(ctx);
-                }
-              }
-
-              @Override
-              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
-                    .build()
-                    .setThreadLocalsFrom(ctx.channel())) {
-                  super.exceptionCaught(ctx, cause);
-                }
-              }
-            }));
+          @Override
+          public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+            try (ContextSnapshot.Scope scope = ContextSnapshotFactory.builder()
+                .build()
+                .setThreadLocalsFrom(ctx.channel())) {
+              super.exceptionCaught(ctx, cause);
+            }
+          }
+        }));
 
     return webClientBuilder.clientConnector(new ReactorClientHttpConnector(httpClient)).build();
   }
